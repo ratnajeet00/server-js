@@ -32,6 +32,22 @@ db.serialize(() => {
       }
     }
   );
+
+  // Create the inventory table if it doesn't exist
+  db.run(
+    `CREATE TABLE IF NOT EXISTS inventory (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      item_name TEXT,
+      quantity INTEGER
+    )`,
+    (err) => {
+      if (err) {
+        console.error("Error creating inventory table:", err);
+      } else {
+        console.log("Inventory table created successfully");
+      }
+    }
+  );
 });
 
 // Add a new user
@@ -86,6 +102,84 @@ app.post("/removeUser", (req, res) => {
       }
     }
   );
+});
+
+// Add a new inventory item
+app.post("/addInventoryItem", (req, res) => {
+  const { item_name, quantity } = req.body;
+
+  if (item_name && quantity) {
+    db.run(
+      "INSERT INTO inventory (item_name, quantity) VALUES (?, ?)",
+      [item_name, quantity],
+      function (err) {
+        if (err) {
+          console.error("Error during inventory item creation:", err);
+          res.status(500).json({ message: "Internal server error" });
+        } else {
+          res.status(200).json({ message: "Inventory item created successfully" });
+        }
+      }
+    );
+  } else {
+    res.status(400).json({ message: "Invalid item name or quantity" });
+  }
+});
+
+// Retrieve the list of inventory items
+app.get("/inventoryList", (req, res) => {
+  db.all("SELECT * FROM inventory", (err, rows) => {
+    if (err) {
+      console.error("Error retrieving inventory list:", err);
+      res.status(500).json({ message: "Internal server error" });
+    } else {
+      res.json(rows);
+    }
+  });
+});
+
+// Remove an inventory item
+app.post("/removeInventoryItem", (req, res) => {
+  const { id } = req.body;
+
+  db.run(
+    "DELETE FROM inventory WHERE id = ?",
+    [id],
+    function (err) {
+      if (err) {
+        console.error("Error during inventory item removal:", err);
+        res.status(500).json({ message: "Internal server error" });
+      } else if (this.changes > 0) {
+        res.status(200).json({ message: "Inventory item removed successfully" });
+      } else {
+        res.status(404).json({ message: "Inventory item not found" });
+      }
+    }
+  );
+});
+
+// Update an inventory item
+app.post("/updateInventoryItem", (req, res) => {
+  const { id, item_name, quantity } = req.body;
+
+  if (id && item_name && quantity) {
+    db.run(
+      "UPDATE inventory SET item_name = ?, quantity = ? WHERE id = ?",
+      [item_name, quantity, id],
+      function (err) {
+        if (err) {
+          console.error("Error during inventory item update:", err);
+          res.status(500).json({ message: "Internal server error" });
+        } else if (this.changes > 0) {
+          res.status(200).json({ message: "Inventory item updated successfully" });
+        } else {
+          res.status(404).json({ message: "Inventory item not found" });
+        }
+      }
+    );
+  } else{
+    res.status(400).json({ message: "Invalid item ID, name, or quantity" });
+  }
 });
 
 // Start the server
