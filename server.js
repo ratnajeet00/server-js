@@ -1,5 +1,4 @@
 const express = require("express");
-const axios = require("axios");
 const bodyParser = require("body-parser");
 const sqlite3 = require("sqlite3").verbose();
 const path = require("path");
@@ -18,9 +17,9 @@ db.serialize(() => {
     "SELECT sql FROM sqlite_master WHERE type='table' AND name='users'",
     (err, row) => {
       if (err) {
-        console.error("Error checking if table exists:", err);
+        console.error("Error checking if users table exists:", err);
       } else {
-        const expectedSchema = `
+        const expectedUsersSchema = `
           CREATE TABLE users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT,
@@ -28,13 +27,39 @@ db.serialize(() => {
             email VARCHAR
           )
         `;
-        if (!row || row.sql !== expectedSchema) {
-          console.log("Updating table structure...");
+        if (!row || row.sql !== expectedUsersSchema) {
+          console.log("Updating users table structure...");
           db.run("DROP TABLE IF EXISTS users");
-          db.run(expectedSchema);
+          db.run(expectedUsersSchema);
           console.log("Users table created or updated successfully");
         } else {
           console.log("Users table already exists with the expected structure");
+        }
+      }
+    }
+  );
+
+  db.get(
+    "SELECT sql FROM sqlite_master WHERE type='table' AND name='inventory'",
+    (err, row) => {
+      if (err) {
+        console.error("Error checking if inventory table exists:", err);
+      } else {
+        const expectedInventorySchema = `
+          CREATE TABLE inventory (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            item_name TEXT,
+            quantity INTEGER,
+            price REAL
+          )
+        `;
+        if (!row || row.sql !== expectedInventorySchema) {
+          console.log("Updating inventory table structure...");
+          db.run("DROP TABLE IF EXISTS inventory");
+          db.run(expectedInventorySchema);
+          console.log("Inventory table created or updated successfully");
+        } else {
+          console.log("Inventory table already exists with the expected structure");
         }
       }
     }
@@ -95,30 +120,83 @@ app.post("/removeUser", (req, res) => {
   );
 });
 
-// Login
-app.post("/login", (req, res) => {
-  const { username, password } = req.body;
+// Add a new inventory item
+app.post("/addInventoryItem", (req, res) => {
+  const { item_name, quantity, price } = req.body;
 
-  if (username && password) {
-    db.get(
-      "SELECT * FROM users WHERE username = ? AND password = ?",
-      [username, password],
-      (err, row) => {
+  if (item_name && quantity && price) {
+    db.run(
+      "INSERT INTO inventory (item_name, quantity, price) VALUES (?, ?, ?)",
+      [item_name, quantity, price],
+      function (err) {
         if (err) {
-          console.error("Error during login:", err);
+          console.error("Error during inventory item creation:", err);
           res.status(500).json({ message: "Internal server error" });
-        } else if (row) {
-          res.status(200).json({ message: "Login successful" });
         } else {
-          res.status(401).json({ message: "Invalid username or password" });
+          res.status(200).json({ message: "Inventory item created successfully" });
         }
       }
     );
   } else {
-    res.status(400).json({ message: "Invalid username or password" });
+    res.status(400).json({ message: "Invalid item name, quantity, or price" });
   }
 });
 
+// Retrieve the list of inventory items
+app.get("/inventoryList", (req, res) => {
+  db.all("SELECT * FROM inventory", (err, rows) => {
+    if (err) {
+      console.error("Error retrieving inventory list:", err);
+      res.status(500).json({ message: "Internal server error" });
+    } else {
+      res.json(rows);
+    }
+  });
+});
+
+// Remove an inventory item
+app.post("/removeInventoryItem", (req, res) => {
+  const { id } = req.body;
+
+  db.run(
+    "DELETE FROM inventory WHERE id = ?",
+    [id],
+    function (err) {
+      if (err) {
+        console.error("Error during inventory item removal:", err);
+        res.status(500).json({ message: "Internal server error" });
+      } else if (this.changes > 0) {
+        res.status(200).json({ message: "Inventory item removed successfully" });
+      } else {
+        res.status(404).json({ message: "Inventory item not found" });
+      }
+    }
+  );
+});
+
+// Update an inventory item
+app.post("/updateInventoryItem", (req, res) => {
+  const { id, item_name, quantity, price } = req.body;
+
+  if (id && item_name && quantity && price) {
+    db.run(
+      "UPDATE inventory SET item_name = ?, quantity = ?, price = ? WHERE id = ?",
+      [item_name, quantity, price, id],
+      function (err) {
+        if (err) {
+          console.error("Error during inventory item update:", err);
+          res.status(500).json({ message: "Internal server error" });
+        } else if (this.changes > 0) {
+          res.status(200).json({ message: "Inventory item updated successfully" });
+        } else {
+          res.status(404).json({ message: "Inventory item not found" });
+        }
+      }
+    );
+  } else {
+    res.status(400).json({ message: "Invalid item ID, name, quantity, or price" });
+  }
+});
 
 // Start the server
 const port = process.env.PORT || 3000;
