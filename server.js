@@ -11,40 +11,62 @@ const dbPath = path.join(__dirname, "user.db"); // Path to the SQLite database f
 
 const db = new sqlite3.Database(dbPath);
 
-// Check if the users table exists and verify the structure
+// Check if the users table exists
 db.serialize(() => {
   db.get(
     "SELECT sql FROM sqlite_master WHERE type='table' AND name='users'",
     (err, row) => {
       if (err) {
         console.error("Error checking if users table exists:", err);
-      } else if (!row || !row.sql.includes("email")) {
-        console.log("Updating users table structure...");
-        db.run("ALTER TABLE users ADD COLUMN email VARCHAR", (err) => {
-          if (err) {
-            console.error("Error updating users table:", err);
-          } else {
-            console.log("Users table structure updated successfully");
+      } else if (!row) {
+        // The users table doesn't exist, so create it
+        db.run(
+          `CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username VARCHAR,
+            password VARCHAR,
+            email VARCHAR
+          )`,
+          (err) => {
+            if (err) {
+              console.error("Error creating users table:", err);
+            } else {
+              console.log("Users table created successfully");
+            }
           }
-        });
+        );
       } else {
-        console.log("Users table already exists with the expected structure");
+        // The users table already exists, so do nothing
+        console.log("Users table already exists");
       }
     }
   );
 
-  // Create the inventory table if it doesn't exist
-  db.run(
-    `CREATE TABLE IF NOT EXISTS inventory (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      item_name TEXT,
-      quantity INTEGER
-    )`,
-    (err) => {
+  // Check if the inventory table exists
+  db.get(
+    "SELECT sql FROM sqlite_master WHERE type='table' AND name='inventory'",
+    (err, row) => {
       if (err) {
-        console.error("Error creating inventory table:", err);
+        console.error("Error checking if inventory table exists:", err);
+      } else if (!row) {
+        // The inventory table doesn't exist, so create it
+        db.run(
+          `CREATE TABLE IF NOT EXISTS inventory (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            item_name VARCHAR,
+            quantity INTEGER
+          )`,
+          (err) => {
+            if (err) {
+              console.error("Error creating inventory table:", err);
+            } else {
+              console.log("Inventory table created successfully");
+            }
+          }
+        );
       } else {
-        console.log("Inventory table created successfully");
+        // The inventory table already exists, so do nothing
+        console.log("Inventory table already exists");
       }
     }
   );
