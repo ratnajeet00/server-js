@@ -121,6 +121,7 @@ app.post("/login", (req, res) => {
 });
 
 
+
 // Retrieve the list of users
 app.get("/userList", (req, res) => {
   db.all("SELECT * FROM users", (err, rows) => {
