@@ -95,6 +95,7 @@ app.post("/addUser", (req, res) => {
     res.status(400).json({ message: "Invalid username, password, or email" });
   }
 });
+
 // Login
 app.post("/login", (req, res) => {
   const { username, password } = req.body;
