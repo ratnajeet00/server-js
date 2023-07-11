@@ -95,7 +95,6 @@ app.post("/addUser", (req, res) => {
     res.status(400).json({ message: "Invalid username, password, or email" });
   }
 });
-
 // Login
 app.post("/login", (req, res) => {
   const { username, password } = req.body;
@@ -109,6 +108,7 @@ app.post("/login", (req, res) => {
           console.error("Error during login:", err);
           res.status(500).json({ message: "Internal server error" });
         } else if (row) {
+          console.log(`User '${username}' logged in`); // Added console.log
           res.status(200).json({ message: "Login successful" });
         } else {
           res.status(401).json({ message: "Invalid username or password" });
