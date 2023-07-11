@@ -50,6 +50,8 @@ db.serialize(() => {
   );
 });
 
+
+
 // Add a new user
 app.post("/addUser", (req, res) => {
   const { username, password, email } = req.body;
@@ -71,6 +73,25 @@ app.post("/addUser", (req, res) => {
     res.status(400).json({ message: "Invalid username, password, or email" });
   }
 });
+// Login API
+app.post('/login', (req, res) => {
+    const { username, password } = req.body;
+    if (username && password) {
+        db.get('SELECT * FROM users WHERE username = ? AND password = ?', [username, password], (err, row) => {
+            if (err) {
+                console.error('Error during login:', err);
+                res.status(500).json({ message: 'Internal server error' });
+            } else if (row) {
+                res.status(200).json({ message: 'Login successful' });
+            } else {
+                res.status(401).json({ message: 'Invalid username or password' });
+            }
+        });
+    } else {
+        res.status(400).json({ message: 'Missing username or password' });
+    }
+});
+
 
 // Retrieve the list of users
 app.get("/userList", (req, res) => {
