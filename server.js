@@ -96,7 +96,6 @@ app.post("/addUser", (req, res) => {
   }
 });
 
-// Login
 app.post("/login", (req, res) => {
   const { username, password } = req.body;
 
@@ -110,7 +109,7 @@ app.post("/login", (req, res) => {
           res.status(500).json({ message: "Internal server error" });
         } else if (row) {
           console.log(`User '${username}' logged in`); // Added console.log
-          res.status(200).json({ message: "Login successful" });
+          res.status(200).json({ message: "success" });
         } else {
           res.status(401).json({ message: "Invalid username or password" });
         }
