@@ -126,6 +126,19 @@ app.post("/addUser", (req, res) => {
   }
 });
 
+//view order
+
+app.get("/viewOrders", (req, res) => {
+  db.all("SELECT * FROM orders", (err, rows) => {
+    if (err) {
+      console.error("Error retrieving orders:", err);
+      res.status(500).json({ message: "Internal server error" });
+    } else {
+      res.status(200).json(rows);
+    }
+  });
+});
+
 
 
 // Add a new order
