@@ -72,6 +72,36 @@ db.serialize(() => {
   );
 });
 
+// Check if the orders table exists
+db.get(
+  "SELECT sql FROM sqlite_master WHERE type='table' AND name='orders'",
+  (err, row) => {
+    if (err) {
+      console.error("Error checking if orders table exists:", err);
+    } else if (!row) {
+      // The orders table doesn't exist, so create it
+      db.run(
+        `CREATE TABLE IF NOT EXISTS orders (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          customer_name VARCHAR,
+          chemical_name VARCHAR,
+          date_of_order DATE,
+          date_of_delivery DATE
+        )`,
+        (err) => {
+          if (err) {
+            console.error("Error creating orders table:", err);
+          } else {
+            console.log("Orders table created successfully");
+          }
+        }
+      );
+    } else {
+      // The orders table already exists, so do nothing
+      console.log("Orders table already exists");
+    }
+  }
+);
 
 
 // Add a new user
@@ -93,6 +123,30 @@ app.post("/addUser", (req, res) => {
     );
   } else {
     res.status(400).json({ message: "Invalid username, password, or email" });
+  }
+});
+
+
+
+// Add a new order
+app.post("/addOrder", (req, res) => {
+  const { customerName, chemicalName, dateOfOrder, dateOfDelivery } = req.body;
+
+  if (customerName && chemicalName && dateOfOrder && dateOfDelivery) {
+    db.run(
+      "INSERT INTO orders (customer_name, chemical_name, date_of_order, date_of_delivery) VALUES (?, ?, ?, ?)",
+      [customerName, chemicalName, dateOfOrder, dateOfDelivery],
+      function (err) {
+        if (err) {
+          console.error("Error during order creation:", err);
+          res.status(500).json({ message: "Internal server error" });
+        } else {
+          res.status(200).json({ message: "Order created successfully" });
+        }
+      }
+    );
+  } else {
+    res.status(400).json({ message: "Invalid order details" });
   }
 });
 
