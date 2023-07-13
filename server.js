@@ -209,6 +209,7 @@ app.get("/userList", (req, res) => {
       res.status(500).json({ message: "Internal server error" });
     } else {
       res.json(rows);
+      consle.log("done")
     }
   });
 });
