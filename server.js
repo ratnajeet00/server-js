@@ -13,45 +13,59 @@ const db = new sqlite3.Database(dbPath);
 
 // Function to check and update table structure
 function checkAndUpdateTableStructure(tableName, tableStructure) {
-  db.get(`SELECT sql FROM sqlite_master WHERE type='table' AND name='${tableName}'`, (err, row) => {
+  const existingTableStructureQuery = `SELECT sql FROM sqlite_master WHERE type='table' AND name='${tableName}'`;
+
+  db.get(existingTableStructureQuery, (err, row) => {
     if (err) {
       console.error(`Error checking if ${tableName} table exists:`, err);
     } else {
       const existingTableStructure = row && row.sql ? row.sql.toLowerCase() : "";
       const newTableStructure = tableStructure.toLowerCase();
+
       if (existingTableStructure !== newTableStructure) {
         console.log(`Updating ${tableName} table structure...`);
-        db.run(`DROP TABLE IF EXISTS ${tableName}`, (err) => {
+        const dropTableQuery = `DROP TABLE IF EXISTS ${tableName}`;
+
+        db.run(dropTableQuery, (err) => {
           if (err) {
             console.error(`Error dropping ${tableName} table:`, err);
           } else {
-            db.run(tableStructure, (err) => {
+            const createTableQuery = tableStructure;
+
+            db.run(createTableQuery, (err) => {
               if (err) {
                 console.error(`Error creating ${tableName} table:`, err);
               } else {
                 console.log(`Updated ${tableName} table structure successfully`);
+                createDefaultAdminUser(); // Call the function to create the default admin user
               }
             });
           }
         });
       } else {
         console.log(`${tableName} table structure is up to date`);
+        createDefaultAdminUser(); // Call the function to create the default admin user
       }
     }
   });
 }
 
 // Check and update table structures
-checkAndUpdateTableStructure("users", `
+checkAndUpdateTableStructure(
+  "users",
+  `
   CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username VARCHAR,
     password VARCHAR,
     email VARCHAR
   )
-`);
+`
+);
 
-checkAndUpdateTableStructure("inventory", `
+checkAndUpdateTableStructure(
+  "inventory",
+  `
   CREATE TABLE IF NOT EXISTS inventory (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     item_name VARCHAR,
@@ -60,9 +74,12 @@ checkAndUpdateTableStructure("inventory", `
     date_of_manufacture DATE,
     type VARCHAR
   )
-`);
+`
+);
 
-checkAndUpdateTableStructure("orders", `
+checkAndUpdateTableStructure(
+  "orders",
+  `
   CREATE TABLE IF NOT EXISTS orders (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     customer_name VARCHAR,
@@ -70,7 +87,37 @@ checkAndUpdateTableStructure("orders", `
     date_of_order DATE,
     date_of_delivery DATE
   )
-`);
+`
+);
+
+// Function to create the default admin user
+function createDefaultAdminUser() {
+  // Add default admin user if it doesn't exist
+  db.get("SELECT * FROM users WHERE username = 'admin'", (err, row) => {
+    if (err) {
+      console.error("Error checking admin user:", err);
+    } else if (!row) {
+      console.log("Creating default admin user...");
+      db.run(
+        "INSERT INTO users (username, password, email) VALUES (?, ?, ?)",
+        ["admin", "admin", "admin@example.com"],
+        function (err) {
+          if (err) {
+            console.error("Error creating default admin user:", err);
+          } else {
+            console.log("Default admin user created successfully");
+          }
+        }
+      );
+    } else {
+      console.log("Default admin user already exists");
+    }
+  });
+}
+
+// Rest of the code...
+
+
 
 
 // Add a new user
