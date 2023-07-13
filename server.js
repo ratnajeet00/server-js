@@ -85,6 +85,7 @@ checkAndUpdateTableStructure(
     customer_name VARCHAR,
     chemical_name VARCHAR,
     date_of_order DATE,
+    quantity INTEGER,
     date_of_delivery DATE
   )
 `
