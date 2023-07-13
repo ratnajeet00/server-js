@@ -19,7 +19,8 @@ function checkAndUpdateTableStructure(tableName, tableStructure) {
     if (err) {
       console.error(`Error checking if ${tableName} table exists:`, err);
     } else {
-      const existingTableStructure = row && row.sql ? row.sql.toLowerCase() : "";
+      const existingTableStructure =
+        row && row.sql ? row.sql.toLowerCase() : "";
       const newTableStructure = tableStructure.toLowerCase();
 
       if (existingTableStructure !== newTableStructure) {
@@ -36,7 +37,9 @@ function checkAndUpdateTableStructure(tableName, tableStructure) {
               if (err) {
                 console.error(`Error creating ${tableName} table:`, err);
               } else {
-                console.log(`Updated ${tableName} table structure successfully`);
+                console.log(
+                  `Updated ${tableName} table structure successfully`
+                );
                 createDefaultAdminUser(); // Call the function to create the default admin user
               }
             });
@@ -117,9 +120,6 @@ function createDefaultAdminUser() {
 }
 
 // Rest of the code...
-
-
-
 
 // Add a new user
 app.post("/addUser", (req, res) => {
@@ -210,7 +210,6 @@ app.get("/userList", (req, res) => {
       res.status(500).json({ message: "Internal server error" });
     } else {
       res.json(rows);
-     
     }
   });
 });
@@ -219,25 +218,22 @@ app.get("/userList", (req, res) => {
 app.post("/removeUser", (req, res) => {
   const { username } = req.body;
 
-  db.run(
-    "DELETE FROM users WHERE username = ?",
-    [username],
-    function (err) {
-      if (err) {
-        console.error("Error during user removal:", err);
-        res.status(500).json({ message: "Internal server error" });
-      } else if (this.changes > 0) {
-        res.status(200).json({ message: "User removed successfully" });
-      } else {
-        res.status(404).json({ message: "User not found" });
-      }
+  db.run("DELETE FROM users WHERE username = ?", [username], function (err) {
+    if (err) {
+      console.error("Error during user removal:", err);
+      res.status(500).json({ message: "Internal server error" });
+    } else if (this.changes > 0) {
+      res.status(200).json({ message: "User removed successfully" });
+    } else {
+      res.status(404).json({ message: "User not found" });
     }
-  );
+  });
 });
 
 // Add a new inventory item
 app.post("/addInventoryItem", (req, res) => {
-  const { item_name, quantity, date_of_expiry, date_of_manufacture, type } = req.body;
+  const { item_name, quantity, date_of_expiry, date_of_manufacture, type } =
+    req.body;
 
   if (item_name && quantity && date_of_expiry && date_of_manufacture && type) {
     db.run(
@@ -248,7 +244,9 @@ app.post("/addInventoryItem", (req, res) => {
           console.error("Error during inventory item creation:", err);
           res.status(500).json({ message: "Internal server error" });
         } else {
-          res.status(200).json({ message: "Inventory item created successfully" });
+          res
+            .status(200)
+            .json({ message: "Inventory item created successfully" });
         }
       }
     );
@@ -273,27 +271,31 @@ app.get("/inventoryList", (req, res) => {
 app.post("/removeInventoryItem", (req, res) => {
   const { id } = req.body;
 
-  db.run(
-    "DELETE FROM inventory WHERE id = ?",
-    [id],
-    function (err) {
-      if (err) {
-        console.error("Error during inventory item removal:", err);
-        res.status(500).json({ message: "Internal server error" });
-      } else if (this.changes > 0) {
-        res.status(200).json({ message: "Inventory item removed successfully" });
-      } else {
-        res.status(404).json({ message: "Inventory item not found" });
-      }
+  db.run("DELETE FROM inventory WHERE id = ?", [id], function (err) {
+    if (err) {
+      console.error("Error during inventory item removal:", err);
+      res.status(500).json({ message: "Internal server error" });
+    } else if (this.changes > 0) {
+      res.status(200).json({ message: "Inventory item removed successfully" });
+    } else {
+      res.status(404).json({ message: "Inventory item not found" });
     }
-  );
+  });
 });
 
 // Update an inventory item
 app.post("/updateInventoryItem", (req, res) => {
-  const { id, item_name, quantity, date_of_expiry, date_of_manufacture, type } = req.body;
+  const { id, item_name, quantity, date_of_expiry, date_of_manufacture, type } =
+    req.body;
 
-  if (id && item_name && quantity && date_of_expiry && date_of_manufacture && type) {
+  if (
+    id &&
+    item_name &&
+    quantity &&
+    date_of_expiry &&
+    date_of_manufacture &&
+    type
+  ) {
     db.run(
       "UPDATE inventory SET item_name = ?, quantity = ?, date_of_expiry = ?, date_of_manufacture = ?, type = ? WHERE id = ?",
       [item_name, quantity, date_of_expiry, date_of_manufacture, type, id],
@@ -302,7 +304,9 @@ app.post("/updateInventoryItem", (req, res) => {
           console.error("Error during inventory item update:", err);
           res.status(500).json({ message: "Internal server error" });
         } else if (this.changes > 0) {
-          res.status(200).json({ message: "Inventory item updated successfully" });
+          res
+            .status(200)
+            .json({ message: "Inventory item updated successfully" });
         } else {
           res.status(404).json({ message: "Inventory item not found" });
         }
