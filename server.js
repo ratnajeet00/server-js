@@ -11,97 +11,66 @@ const dbPath = path.join(__dirname, "user.db"); // Path to the SQLite database f
 
 const db = new sqlite3.Database(dbPath);
 
-// Check if the users table exists
-db.serialize(() => {
-  db.get(
-    "SELECT sql FROM sqlite_master WHERE type='table' AND name='users'",
-    (err, row) => {
-      if (err) {
-        console.error("Error checking if users table exists:", err);
-      } else if (!row) {
-        // The users table doesn't exist, so create it
-        db.run(
-          `CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username VARCHAR,
-            password VARCHAR,
-            email VARCHAR
-          )`,
-          (err) => {
-            if (err) {
-              console.error("Error creating users table:", err);
-            } else {
-              console.log("Users table created successfully");
-            }
-          }
-        );
-      } else {
-        // The users table already exists, so do nothing
-        console.log("Users table already exists");
-      }
-    }
-  );
-
-  // Check if the inventory table exists
-  db.get(
-    "SELECT sql FROM sqlite_master WHERE type='table' AND name='inventory'",
-    (err, row) => {
-      if (err) {
-        console.error("Error checking if inventory table exists:", err);
-      } else if (!row) {
-        // The inventory table doesn't exist, so create it
-        db.run(
-          `CREATE TABLE IF NOT EXISTS inventory (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            item_name VARCHAR,
-            quantity INTEGER
-          )`,
-          (err) => {
-            if (err) {
-              console.error("Error creating inventory table:", err);
-            } else {
-              console.log("Inventory table created successfully");
-            }
-          }
-        );
-      } else {
-        // The inventory table already exists, so do nothing
-        console.log("Inventory table already exists");
-      }
-    }
-  );
-});
-
-// Check if the orders table exists
-db.get(
-  "SELECT sql FROM sqlite_master WHERE type='table' AND name='orders'",
-  (err, row) => {
+// Function to check and update table structure
+function checkAndUpdateTableStructure(tableName, tableStructure) {
+  db.get(`SELECT sql FROM sqlite_master WHERE type='table' AND name='${tableName}'`, (err, row) => {
     if (err) {
-      console.error("Error checking if orders table exists:", err);
-    } else if (!row) {
-      // The orders table doesn't exist, so create it
-      db.run(
-        `CREATE TABLE IF NOT EXISTS orders (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          customer_name VARCHAR,
-          chemical_name VARCHAR,
-          date_of_order DATE,
-          date_of_delivery DATE
-        )`,
-        (err) => {
-          if (err) {
-            console.error("Error creating orders table:", err);
-          } else {
-            console.log("Orders table created successfully");
-          }
-        }
-      );
+      console.error(`Error checking if ${tableName} table exists:`, err);
     } else {
-      // The orders table already exists, so do nothing
-      console.log("Orders table already exists");
+      const existingTableStructure = row && row.sql ? row.sql.toLowerCase() : "";
+      const newTableStructure = tableStructure.toLowerCase();
+      if (existingTableStructure !== newTableStructure) {
+        console.log(`Updating ${tableName} table structure...`);
+        db.run(`DROP TABLE IF EXISTS ${tableName}`, (err) => {
+          if (err) {
+            console.error(`Error dropping ${tableName} table:`, err);
+          } else {
+            db.run(tableStructure, (err) => {
+              if (err) {
+                console.error(`Error creating ${tableName} table:`, err);
+              } else {
+                console.log(`Updated ${tableName} table structure successfully`);
+              }
+            });
+          }
+        });
+      } else {
+        console.log(`${tableName} table structure is up to date`);
+      }
     }
-  }
-);
+  });
+}
+
+// Check and update table structures
+checkAndUpdateTableStructure("users", `
+  CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username VARCHAR,
+    password VARCHAR,
+    email VARCHAR
+  )
+`);
+
+checkAndUpdateTableStructure("inventory", `
+  CREATE TABLE IF NOT EXISTS inventory (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    item_name VARCHAR,
+    quantity INTEGER,
+    date_of_expiry DATE,
+    date_of_manufacture DATE,
+    type VARCHAR
+  )
+`);
+
+checkAndUpdateTableStructure("orders", `
+  CREATE TABLE IF NOT EXISTS orders (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    customer_name VARCHAR,
+    chemical_name VARCHAR,
+    date_of_order DATE,
+    date_of_delivery DATE
+  )
+`);
 
 
 // Add a new user
@@ -126,8 +95,7 @@ app.post("/addUser", (req, res) => {
   }
 });
 
-//view order
-
+// View orders
 app.get("/viewOrders", (req, res) => {
   db.all("SELECT * FROM orders", (err, rows) => {
     if (err) {
@@ -138,8 +106,6 @@ app.get("/viewOrders", (req, res) => {
     }
   });
 });
-
-
 
 // Add a new order
 app.post("/addOrder", (req, res) => {
@@ -163,6 +129,7 @@ app.post("/addOrder", (req, res) => {
   }
 });
 
+// User login
 app.post("/login", (req, res) => {
   const { username, password } = req.body;
 
@@ -175,7 +142,7 @@ app.post("/login", (req, res) => {
           console.error("Error during login:", err);
           res.status(500).json({ message: "Internal server error" });
         } else if (row) {
-          console.log(`User '${username}' logged in`); // Added console.log
+          console.log(`User '${username}' logged in`);
           res.status(200).json({ message: "success" });
         } else {
           res.status(401).json({ message: "Invalid username or password" });
@@ -186,8 +153,6 @@ app.post("/login", (req, res) => {
     res.status(400).json({ message: "Invalid username or password" });
   }
 });
-
-
 
 // Retrieve the list of users
 app.get("/userList", (req, res) => {
@@ -223,12 +188,12 @@ app.post("/removeUser", (req, res) => {
 
 // Add a new inventory item
 app.post("/addInventoryItem", (req, res) => {
-  const { item_name, quantity } = req.body;
+  const { item_name, quantity, date_of_expiry, date_of_manufacture, type } = req.body;
 
-  if (item_name && quantity) {
+  if (item_name && quantity && date_of_expiry && date_of_manufacture && type) {
     db.run(
-      "INSERT INTO inventory (item_name, quantity) VALUES (?, ?)",
-      [item_name, quantity],
+      "INSERT INTO inventory (item_name, quantity, date_of_expiry, date_of_manufacture, type) VALUES (?, ?, ?, ?, ?)",
+      [item_name, quantity, date_of_expiry, date_of_manufacture, type],
       function (err) {
         if (err) {
           console.error("Error during inventory item creation:", err);
@@ -239,7 +204,7 @@ app.post("/addInventoryItem", (req, res) => {
       }
     );
   } else {
-    res.status(400).json({ message: "Invalid item name or quantity" });
+    res.status(400).json({ message: "Invalid item details" });
   }
 });
 
@@ -277,12 +242,12 @@ app.post("/removeInventoryItem", (req, res) => {
 
 // Update an inventory item
 app.post("/updateInventoryItem", (req, res) => {
-  const { id, item_name, quantity } = req.body;
+  const { id, item_name, quantity, date_of_expiry, date_of_manufacture, type } = req.body;
 
-  if (id && item_name && quantity) {
+  if (id && item_name && quantity && date_of_expiry && date_of_manufacture && type) {
     db.run(
-      "UPDATE inventory SET item_name = ?, quantity = ? WHERE id = ?",
-      [item_name, quantity, id],
+      "UPDATE inventory SET item_name = ?, quantity = ?, date_of_expiry = ?, date_of_manufacture = ?, type = ? WHERE id = ?",
+      [item_name, quantity, date_of_expiry, date_of_manufacture, type, id],
       function (err) {
         if (err) {
           console.error("Error during inventory item update:", err);
@@ -294,7 +259,7 @@ app.post("/updateInventoryItem", (req, res) => {
         }
       }
     );
-  } else{
+  } else {
     res.status(400).json({ message: "Invalid item ID, name, or quantity" });
   }
 });
