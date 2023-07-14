@@ -52,7 +52,19 @@ function checkAndUpdateTableStructure(tableName, tableStructure) {
     }
   });
 }
-// Check and update table structures
+
+checkAndUpdateTableStructure(
+  "users",
+  `
+  CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username VARCHAR,
+    password VARCHAR,
+    email VARCHAR
+  )
+`
+);
+
 checkAndUpdateTableStructure(
   "items",
   `
@@ -74,20 +86,6 @@ checkAndUpdateTableStructure(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     customer_name VARCHAR,
     item_name VARCHAR,
-    date_of_order DATE,
-    quantity INTEGER,
-    date_of_delivery DATE
-  )
-`
-);
-
-checkAndUpdateTableStructure(
-  "orders",
-  `
-  CREATE TABLE IF NOT EXISTS orders (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    customer_name VARCHAR,
-    chemical_name VARCHAR,
     date_of_order DATE,
     quantity INTEGER,
     date_of_delivery DATE
@@ -144,6 +142,40 @@ app.post("/addUser", (req, res) => {
   }
 });
 
+// View orders
+app.get("/viewOrders", (req, res) => {
+  db.all("SELECT * FROM orders", (err, rows) => {
+    if (err) {
+      console.error("Error retrieving orders:", err);
+      res.status(500).json({ message: "Internal server error" });
+    } else {
+      res.status(200).json(rows);
+    }
+  });
+});
+
+// Add a new order
+app.post("/addOrder", (req, res) => {
+  const { customerName, chemicalName, dateOfOrder, dateOfDelivery } = req.body;
+
+  if (customerName && chemicalName && dateOfOrder && dateOfDelivery) {
+    db.run(
+      "INSERT INTO orders (customer_name, chemical_name, date_of_order, date_of_delivery) VALUES (?, ?, ?, ?)",
+      [customerName, chemicalName, dateOfOrder, dateOfDelivery],
+      function (err) {
+        if (err) {
+          console.error("Error during order creation:", err);
+          res.status(500).json({ message: "Internal server error" });
+        } else {
+          res.status(200).json({ message: "Order created successfully" });
+        }
+      }
+    );
+  } else {
+    res.status(400).json({ message: "Invalid order details" });
+  }
+});
+
 // User login
 app.post("/login", (req, res) => {
   const { username, password } = req.body;
@@ -197,23 +229,29 @@ app.post("/removeUser", (req, res) => {
   });
 });
 
-// Add a new inventory item
-app.post("/addInventoryItem", (req, res) => {
+// Add a new item
+app.post("/addItem", (req, res) => {
   const { item_name, quantity, date_of_expiry, date_of_manufacture, type } =
     req.body;
 
-  if (item_name && quantity && date_of_expiry && date_of_manufacture && type) {
+  if (
+    item_name &&
+    quantity &&
+    date_of_expiry &&
+    date_of_manufacture &&
+    type
+  ) {
     db.run(
-      "INSERT INTO inventory (item_name, quantity, date_of_expiry, date_of_manufacture, type) VALUES (?, ?, ?, ?, ?)",
+      "INSERT INTO items (item_name, quantity, date_of_expiry, date_of_manufacture, type) VALUES (?, ?, ?, ?, ?)",
       [item_name, quantity, date_of_expiry, date_of_manufacture, type],
       function (err) {
         if (err) {
-          console.error("Error during inventory item creation:", err);
+          console.error("Error during item creation:", err);
           res.status(500).json({ message: "Internal server error" });
         } else {
           res
             .status(200)
-            .json({ message: "Inventory item created successfully" });
+            .json({ message: "Item created successfully" });
         }
       }
     );
@@ -222,11 +260,11 @@ app.post("/addInventoryItem", (req, res) => {
   }
 });
 
-// Retrieve the list of inventory items
-app.get("/inventoryList", (req, res) => {
-  db.all("SELECT * FROM inventory", (err, rows) => {
+// Retrieve the list of items
+app.get("/itemList", (req, res) => {
+  db.all("SELECT * FROM items", (err, rows) => {
     if (err) {
-      console.error("Error retrieving inventory list:", err);
+      console.error("Error retrieving item list:", err);
       res.status(500).json({ message: "Internal server error" });
     } else {
       res.json(rows);
@@ -234,24 +272,24 @@ app.get("/inventoryList", (req, res) => {
   });
 });
 
-// Remove an inventory item
-app.post("/removeInventoryItem", (req, res) => {
+// Remove an item
+app.post("/removeItem", (req, res) => {
   const { id } = req.body;
 
-  db.run("DELETE FROM inventory WHERE id = ?", [id], function (err) {
+  db.run("DELETE FROM items WHERE id = ?", [id], function (err) {
     if (err) {
-      console.error("Error during inventory item removal:", err);
+      console.error("Error during item removal:", err);
       res.status(500).json({ message: "Internal server error" });
     } else if (this.changes > 0) {
-      res.status(200).json({ message: "Inventory item removed successfully" });
+      res.status(200).json({ message: "Item removed successfully" });
     } else {
-      res.status(404).json({ message: "Inventory item not found" });
+      res.status(404).json({ message: "Item not found" });
     }
   });
 });
 
-// Update an inventory item
-app.post("/updateInventoryItem", (req, res) => {
+// Update an item
+app.post("/updateItem", (req, res) => {
   const { id, item_name, quantity, date_of_expiry, date_of_manufacture, type } =
     req.body;
 
@@ -264,24 +302,65 @@ app.post("/updateInventoryItem", (req, res) => {
     type
   ) {
     db.run(
-      "UPDATE inventory SET item_name = ?, quantity = ?, date_of_expiry = ?, date_of_manufacture = ?, type = ? WHERE id = ?",
+      "UPDATE items SET item_name = ?, quantity = ?, date_of_expiry = ?, date_of_manufacture = ?, type = ? WHERE id = ?",
       [item_name, quantity, date_of_expiry, date_of_manufacture, type, id],
       function (err) {
         if (err) {
-          console.error("Error during inventory item update:", err);
+          console.error("Error during item update:", err);
           res.status(500).json({ message: "Internal server error" });
         } else if (this.changes > 0) {
           res
             .status(200)
-            .json({ message: "Inventory item updated successfully" });
+            .json({ message: "Item updated successfully" });
         } else {
-          res.status(404).json({ message: "Inventory item not found" });
+          res.status(404).json({ message: "Item not found" });
         }
       }
     );
   } else {
     res.status(400).json({ message: "Invalid item ID, name, or quantity" });
   }
+});
+
+// Add a new order
+app.post("/addOrder", (req, res) => {
+  const { customer_name, item_name, date_of_order, quantity, date_of_delivery } =
+    req.body;
+
+  if (
+    customer_name &&
+    item_name &&
+    date_of_order &&
+    quantity &&
+    date_of_delivery
+  ) {
+    db.run(
+      "INSERT INTO orders (customer_name, item_name, date_of_order, quantity, date_of_delivery) VALUES (?, ?, ?, ?, ?)",
+      [customer_name, item_name, date_of_order, quantity, date_of_delivery],
+      function (err) {
+        if (err) {
+          console.error("Error during order creation:", err);
+          res.status(500).json({ message: "Internal server error" });
+        } else {
+          res.status(200).json({ message: "Order created successfully" });
+        }
+      }
+    );
+  } else {
+    res.status(400).json({ message: "Invalid order details" });
+  }
+});
+
+// Retrieve the list of orders
+app.get("/orderList", (req, res) => {
+  db.all("SELECT * FROM orders", (err, rows) => {
+    if (err) {
+      console.error("Error retrieving order list:", err);
+      res.status(500).json({ message: "Internal server error" });
+    } else {
+      res.json(rows);
+    }
+  });
 });
 
 // Start the server
