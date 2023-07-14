@@ -52,30 +52,31 @@ function checkAndUpdateTableStructure(tableName, tableStructure) {
     }
   });
 }
-
 // Check and update table structures
 checkAndUpdateTableStructure(
-  "users",
+  "items",
   `
-  CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username VARCHAR,
-    password VARCHAR,
-    email VARCHAR
-  )
-`
-);
-
-checkAndUpdateTableStructure(
-  "inventory",
-  `
-  CREATE TABLE IF NOT EXISTS inventory (
+  CREATE TABLE IF NOT EXISTS items (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     item_name VARCHAR,
     quantity INTEGER,
     date_of_expiry DATE,
     date_of_manufacture DATE,
     type VARCHAR
+  )
+`
+);
+
+checkAndUpdateTableStructure(
+  "orders",
+  `
+  CREATE TABLE IF NOT EXISTS orders (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    customer_name VARCHAR,
+    item_name VARCHAR,
+    date_of_order DATE,
+    quantity INTEGER,
+    date_of_delivery DATE
   )
 `
 );
@@ -140,40 +141,6 @@ app.post("/addUser", (req, res) => {
     );
   } else {
     res.status(400).json({ message: "Invalid username, password, or email" });
-  }
-});
-
-// View orders
-app.get("/viewOrders", (req, res) => {
-  db.all("SELECT * FROM orders", (err, rows) => {
-    if (err) {
-      console.error("Error retrieving orders:", err);
-      res.status(500).json({ message: "Internal server error" });
-    } else {
-      res.status(200).json(rows);
-    }
-  });
-});
-
-// Add a new order
-app.post("/addOrder", (req, res) => {
-  const { customerName, chemicalName, dateOfOrder, dateOfDelivery } = req.body;
-
-  if (customerName && chemicalName && dateOfOrder && dateOfDelivery) {
-    db.run(
-      "INSERT INTO orders (customer_name, chemical_name, date_of_order, date_of_delivery) VALUES (?, ?, ?, ?)",
-      [customerName, chemicalName, dateOfOrder, dateOfDelivery],
-      function (err) {
-        if (err) {
-          console.error("Error during order creation:", err);
-          res.status(500).json({ message: "Internal server error" });
-        } else {
-          res.status(200).json({ message: "Order created successfully" });
-        }
-      }
-    );
-  } else {
-    res.status(400).json({ message: "Invalid order details" });
   }
 });
 
