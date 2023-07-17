@@ -1,60 +1,118 @@
-# Hello SQLite!
+# Complete Order Management System
 
-This project includes a [Node.js](https://nodejs.org/en/about/) server script that uses a persistent [SQLite](https://www.sqlite.org) database. The app also includes a front-end with two web pages that connect to the database using the server API. 📊
+The Complete Order Management System is a web application built with Express.js and SQLite to manage orders and items. It provides functionality to add new orders, update item quantities, retrieve lists of items and orders, transfer orders to the complete order list, and more. The system also includes features to save the complete order data in a Word or CSV file.
 
-The home page presents the user with a poll where they can choose an option, then the page presents the results in a chart. The admin page displays the log of past choices and allows the user to clear it by supplying an admin key (you can set this up by following the steps in `TODO.md`). 🔒
+## Features
 
-_Last updated: 03 May 2023_
+- User authentication: Users can log in to access the system.
+- Order Management:
+  - Add new orders.
+  - Update item quantities.
+  - Retrieve a list of orders.
+  - Transfer orders to the complete order list.
+  - Remove orders from the system.
+- Item Management:
+  - Retrieve a list of items.
+  - Update item quantities.
+- Save Data:
+  - Save the complete order data in a Word file.
+  - Save the complete order data in a CSV file.
 
 ## Prerequisites
 
-To get best use out of this project you'll ideally be familiar with JavaScript and have a little Node.js experience–check out [Hello Node](https://glitch.com/~glitch-hello-node) if you haven't already!
+Before running the Complete Order Management System, ensure you have the following dependencies installed:
 
-## What's in this project?
+- Node.js (version X.X.X)
+- npm (version X.X.X)
+- SQLite (version X.X.X)
 
-← `README.md`: That’s this file, where you can tell people what your cool website does and how you built it.
+## Installation
 
-← `package.json`: The NPM packages for your project's dependencies.
+1. Clone the repository:
 
-← `.env`: The environment is cleared when you initially remix the project, but you will add a new env variable value when you follow the steps in `TODO.md` to set up an admin key.
+```bash
+git clone https://github.com/your-username/complete-order-management-system.git
+```
 
-### Server and database
+Certainly! Here's a README file template that you can use to document the code:
 
-← `server.js`: The Node.js server script for your new site. The JavaScript defines the endpoints in the site API. The API processes requests, connects to the database using the `sqlite` script in `src`, and sends info back to the client (the web pages that make up the app user interface, built using the Handlebars templates in `src/pages`).
+markdown
+Copy code
+# Complete Order Management System
 
-← `/src/sqlite.js`: The database script handles setting up and connecting to the SQLite database. The `server.js` API endpoints call the functions in the database script to manage the data.
+The Complete Order Management System is a web application built with Express.js and SQLite to manage orders and items. It provides functionality to add new orders, update item quantities, retrieve lists of items and orders, transfer orders to the complete order list, and more. The system also includes features to save the complete order data in a Word or CSV file.
 
-← `/src/data.json`: The data config file includes the database manager script–`server.js` reads the `database` property to import the correct script.
+## Features
 
-When the app runs, the scripts build the database:
+- User authentication: Users can log in to access the system.
+- Order Management:
+  - Add new orders.
+  - Update item quantities.
+  - Retrieve a list of orders.
+  - Transfer orders to the complete order list.
+  - Remove orders from the system.
+- Item Management:
+  - Retrieve a list of items.
+  - Update item quantities.
+- Save Data:
+  - Save the complete order data in a Word file.
+  - Save the complete order data in a CSV file.
 
-← `.data/choices.db`: Your database is created and placed in the `.data` folder, a hidden directory whose contents aren’t copied when a project is remixed. You can see the contents of `.data` in the console by selecting __Tools__ >  __Logs__.
+## Prerequisites
 
-### User interface
+Before running the Complete Order Management System, ensure you have the following dependencies installed:
 
-← `public/style.css`: The style rules that define the site appearance.
+- Node.js (version X.X.X)
+- npm (version X.X.X)
+- SQLite (version X.X.X)
 
-← `src/pages`: The handlebars files that make up the site user interface. The API in `server.js` sends data to these templates to include in the HTML.
+## Installation
 
-← `src/pages/index.hbs`: The site homepage presents a form when the user first visits. When the visitor submits a preference through the form, the app calls the `POST` endpoint `/`, passing the user selection. The `server.js` endpoint updates the database and returns the user choices submitted so far, which the page presents in a chart (using [Chart.js](https://www.chartjs.org/docs/)–you can see the code in the page `head`).
+1. Clone the repository:
 
-← `src/pages/admin.hbs`: The admin page presents a table displaying the log of most recent picks. You can clear the list by setting up your admin key (see `TODO.md`). If the user attempts to clear the list without a valid key, the page will present the log again.
+```bash
+git clone https://github.com/your-username/complete-order-management-system.git
+```
+Navigate to the project directory:
+```bash
+cd complete-order-management-system
+```
+```Install the dependencies:
+bash
+npm install
+```
+```Create the SQLite database file:
+bash
+touch data.db
+```
+```Run the database migration to create or update the required tables:
 
-← `src/seo.json`: When you're ready to share your new site or add a custom domain, change SEO/meta settings in here.
+npm run migrate
+```
+Configuration
+Before starting the server, ensure the following configurations are set:
 
-## Try this next 🏗️
+Database Path:
+Open config.js file.
+Update the dbPath variable in the configuration to specify the correct path to your SQLite database file.
+Usage
+Start the server:
+bash
+Copy code
+npm start
+Access the Complete Order Management System in your web browser at http://localhost:3000.
+API Endpoints
+POST /login: User login. Parameters: username, password.
+GET /itemList: Retrieve a list of items.
+POST /updateItem: Update an item's quantity. Parameters: id, quantity.
+GET /orderList: Retrieve a list of orders.
+POST /addOrder: Add a new order. Parameters: customer_name, item_name, quantity.
+POST /deleteData: Remove an order. Parameters: itemId.
+POST /transferData: Transfer selected order data from orders table to complete_order table. Parameters: itemId.
+GET /saveCompleteOrder: Save complete_order data in a Word file.
+GET /saveCompleteOrderCSV: Save complete_order data in a CSV file.
+Contributing
+Contributions to the Complete Order Management System are welcome! If you encounter any bugs, have suggestions, or want to contribute enhancements, please feel free to submit a pull request.
 
-Take a look in `TODO.md` for steps in setting up your admin key and adding to the site functionality.
-
-💡 __Want to use the server script as an API without using the front-end UI? No problem! Just send a query parameter `?raw=json` with your requests to return JSON, like this (replace the first part of the URL to match your remix): `glitch-hello-sqlite.glitch.me?raw=json`__
-
-___Check out [Blank SQLite](https://glitch.com/~glitch-blank-sqlite) for a minimal demo of get, post, put, and delete methods.___
-
-![Glitch](https://cdn.glitch.com/a9975ea6-8949-4bab-addb-8a95021dc2da%2FLogo_Color.svg?v=1602781328576)
-
-## You built this with Glitch!
-
-[Glitch](https://glitch.com) is a friendly community where millions of people come together to build web apps and websites.
-
-- Need more help? [Check out our Help Center](https://help.glitch.com/) for answers to any common questions.
-- Ready to make it official? [Become a paid Glitch member](https://glitch.com/pricing) to boost your app with private sharing, more storage and memory, domains and more.
+License
+MIT
